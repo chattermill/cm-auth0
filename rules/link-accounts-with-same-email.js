@@ -1,7 +1,7 @@
 // Rule links social accounts to base auth0 account
 
 function(user, context, callback) {
-  var request = require('request@2.56.0');
+  const request = require('request@2.56.0');
 
   function _isBaseProfile(profile) {
     return !!profile.identities.filter(function(i) {
@@ -17,7 +17,7 @@ function(user, context, callback) {
     return callback(null, user, context);
   }
 
-  var userSearchApiUrl = auth0.baseUrl + '/users-by-email';
+  const userSearchApiUrl = auth0.baseUrl + '/users-by-email';
 
   request({
     url: userSearchApiUrl,
@@ -36,8 +36,8 @@ function(user, context, callback) {
       return callback(new UnauthorizedError('Auth0 profile was not found for ' + user.email));
     }
 
-    var alreadyLinked = !!baseProfile.identities.filter(function(i) {
-      var userId = i.provider + '|' + i.user_id;
+    const alreadyLinked = !!baseProfile.identities.filter(function(i) {
+      const userId = i.provider + '|' + i.user_id;
       return userId === user.user_id;
     })[0];
 
@@ -45,9 +45,9 @@ function(user, context, callback) {
       return callback(null, user, context);
     }
 
-    var userApiUrl = auth0.baseUrl + '/users';
-    var provider = user.identities[0].provider;
-    var providerUserId = user.identities[0].user_id;
+    const userApiUrl = auth0.baseUrl + '/users';
+    const provider = user.identities[0].provider;
+    const providerUserId = user.identities[0].user_id;
 
     request.post({
       url: userApiUrl + '/' + baseProfile.user_id + '/identities',
