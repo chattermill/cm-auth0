@@ -27,8 +27,8 @@ function(user, context, callback) {
     if (err) return callback(err);
     if (response.statusCode !== 200) return callback(new Error(body));
 
-    var foundProfiles = JSON.parse(body);
-    var baseProfile = foundProfiles.filter(function(u) {
+    const foundProfiles = JSON.parse(body);
+    const baseProfile = foundProfiles.filter(function(u) {
       return u.email_verified && _isBaseProfile(u);
     })[0];
 
