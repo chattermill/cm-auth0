@@ -1,3 +1,9 @@
+// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+// This code lives at https://github.com/chattermill/cm-auth0
+// All changes to be deployed via Pull Requests
+// AVOID manually editing on Auth0 Web UI
+// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
 function(user, context, callback) {
   const request = require('request@2.56.0');
 
@@ -20,7 +26,7 @@ function(user, context, callback) {
   request({
     url: userSearchApiUrl,
     headers: { Authorization: 'Bearer ' + auth0.accessToken },
-    qs: { email: user.email.toLowerCase() }
+    qs: { email: user.email }
   }, function(err, response, body) {
     if (err) return callback(err);
     if (response.statusCode !== 200) return callback(new Error(body));
