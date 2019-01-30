@@ -40,10 +40,6 @@ function(user, context, callback) {
       return u.email_verified && _isBaseProfile(u);
     })[0];
 
-    if (!baseProfile) {
-      return callback(new UnauthorizedError('Auth0 profile was not found for ' + user.email));
-    }
-
     if (baseProfile) {
       const alreadyLinked = !!baseProfile.identities.filter(function(i) {
         const userId = i.provider + '|' + i.user_id;
