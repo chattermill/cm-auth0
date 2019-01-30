@@ -1,4 +1,8 @@
-// Rule links social accounts to base auth0 account
+// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+// This code lives at https://github.com/chattermill/cm-auth0
+// All changes to be deployed via Pull Requests
+// AVOID manually editing on Auth0 Web UI
+// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 function(user, context, callback) {
   const request = require('request@2.56.0');
@@ -28,41 +32,45 @@ function(user, context, callback) {
     if (response.statusCode !== 200) return callback(new Error(body));
 
     const foundProfiles = JSON.parse(body);
+    if (foundProfiles.length === 0){
+      return callback(null, user, context);
+    }
+
     const baseProfile = foundProfiles.filter(function(u) {
       return u.email_verified && _isBaseProfile(u);
     })[0];
 
-    if (!baseProfile) {
-      return callback(new UnauthorizedError('Auth0 profile was not found for ' + user.email));
-    }
+    if (baseProfile) {
+      const alreadyLinked = !!baseProfile.identities.filter(function(i) {
+        const userId = i.provider + '|' + i.user_id;
+        return userId === user.user_id;
+      })[0];
 
-    const alreadyLinked = !!baseProfile.identities.filter(function(i) {
-      const userId = i.provider + '|' + i.user_id;
-      return userId === user.user_id;
-    })[0];
-
-    if (alreadyLinked) {
-      return callback(null, user, context);
-    }
-
-    const userApiUrl = auth0.baseUrl + '/users';
-    const provider = user.identities[0].provider;
-    const providerUserId = user.identities[0].user_id;
-
-    request.post({
-      url: userApiUrl + '/' + baseProfile.user_id + '/identities',
-      headers: { Authorization: 'Bearer ' + auth0.accessToken },
-      json: {
-        provider: provider,
-        user_id: providerUserId
-      }
-    }, function(err, response, body) {
-      if (response.statusCode >= 400) {
-        return callback(new Error('Error linking account: ' + response.statusMessage));
+      if (alreadyLinked) {
+        return callback(null, user, context);
       }
 
-      context.primaryUser = baseProfile.user_id;
+      const userApiUrl = auth0.baseUrl + '/users';
+      const provider = user.identities[0].provider;
+      const providerUserId = user.identities[0].user_id;
+
+      request.post({
+        url: userApiUrl + '/' + baseProfile.user_id + '/identities',
+        headers: { Authorization: 'Bearer ' + auth0.accessToken },
+        json: {
+          provider: provider,
+          user_id: providerUserId
+        }
+      }, function(err, response, body) {
+        if (response.statusCode >= 400) {
+          return callback(new Error('Error linking account: ' + response.statusMessage));
+        }
+
+        context.primaryUser = baseProfile.user_id;
+        callback(null, user, context);
+      });
+    } else {
       callback(null, user, context);
-    });
+    }
   });
 }
