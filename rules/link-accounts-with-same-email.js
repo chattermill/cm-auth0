@@ -21,7 +21,7 @@ function(user, context, callback) {
     return callback(null, user, context);
   }
 
-  const userSearchApiUrl = auth0.baseUrl + '/users-by-email';
+  const userSearchApiUrl = auth0.baseUrl + '/users';
 
   request({
     url: userSearchApiUrl,
