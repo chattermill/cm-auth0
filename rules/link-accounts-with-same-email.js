@@ -26,7 +26,7 @@ function(user, context, callback) {
   request({
     url: userSearchApiUrl,
     headers: { Authorization: 'Bearer ' + auth0.accessToken },
-    qs: { email: user.email }
+    qs: { q: `email:"${user.email}"`,  search_engine: 'v3' }
   }, function(err, response, body) {
     if (err) return callback(err);
     if (response.statusCode !== 200) return callback(new Error(body));
