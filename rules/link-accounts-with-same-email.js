@@ -37,8 +37,12 @@ function(user, context, callback) {
     }
 
     const baseProfile = foundProfiles.filter(function(u) {
-      return u.email_verified;
+      return u.email_verified && (u.user_id !== user.user_id);
     })[0];
+
+    if (!baseProfile){
+      return callback(null, user, context);
+    }
 
     const alreadyLinked = !!baseProfile.identities.filter(function(i) {
       const userId = i.provider + '|' + i.user_id;
@@ -66,7 +70,7 @@ function(user, context, callback) {
       }
 
       context.primaryUser = baseProfile.user_id;
-      callback(null, user, context);
+      return callback(null, user, context);
     });
   });
 }
