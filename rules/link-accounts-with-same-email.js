@@ -36,10 +36,16 @@ function(user, context, callback) {
       return callback(null, user, context);
     }
 
-    const baseProfile = foundProfiles.filter(function(u) {
+    const validProfiles = foundProfiles.filter(function(u) {
       return u.email_verified && (u.user_id !== user.user_id);
-    })[0];
+    });
 
+    // in case an user has several accounts created in auth0
+    if (validProfiles.length > 1) {
+      return callback(new Error('Multiple user profiles already exist - cannot select base profile to link with'));
+    }
+
+    const baseProfile = validProfiles[0];
     if (!baseProfile){
       return callback(null, user, context);
     }
