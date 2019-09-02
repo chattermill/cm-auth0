@@ -37,40 +37,36 @@ function(user, context, callback) {
     }
 
     const baseProfile = foundProfiles.filter(function(u) {
-      return u.email_verified && _isBaseProfile(u);
+      return u.email_verified;
     })[0];
 
-    if (baseProfile) {
-      const alreadyLinked = !!baseProfile.identities.filter(function(i) {
-        const userId = i.provider + '|' + i.user_id;
-        return userId === user.user_id;
-      })[0];
+    const alreadyLinked = !!baseProfile.identities.filter(function(i) {
+      const userId = i.provider + '|' + i.user_id;
+      return userId === user.user_id;
+    })[0];
 
-      if (alreadyLinked) {
-        return callback(null, user, context);
+    if (alreadyLinked) {
+      return callback(null, user, context);
+    }
+
+    const userApiUrl = auth0.baseUrl + '/users';
+    const provider = user.identities[0].provider;
+    const providerUserId = user.identities[0].user_id;
+
+    request.post({
+      url: userApiUrl + '/' + baseProfile.user_id + '/identities',
+      headers: { Authorization: 'Bearer ' + auth0.accessToken },
+      json: {
+        provider: provider,
+        user_id: providerUserId
+      }
+    }, function(err, response, body) {
+      if (response.statusCode >= 400) {
+        return callback(new Error('Error linking account: ' + response.statusMessage));
       }
 
-      const userApiUrl = auth0.baseUrl + '/users';
-      const provider = user.identities[0].provider;
-      const providerUserId = user.identities[0].user_id;
-
-      request.post({
-        url: userApiUrl + '/' + baseProfile.user_id + '/identities',
-        headers: { Authorization: 'Bearer ' + auth0.accessToken },
-        json: {
-          provider: provider,
-          user_id: providerUserId
-        }
-      }, function(err, response, body) {
-        if (response.statusCode >= 400) {
-          return callback(new Error('Error linking account: ' + response.statusMessage));
-        }
-
-        context.primaryUser = baseProfile.user_id;
-        callback(null, user, context);
-      });
-    } else {
+      context.primaryUser = baseProfile.user_id;
       callback(null, user, context);
-    }
+    });
   });
 }
