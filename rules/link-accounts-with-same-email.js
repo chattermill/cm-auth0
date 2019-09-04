@@ -36,41 +36,47 @@ function(user, context, callback) {
       return callback(null, user, context);
     }
 
-    const baseProfile = foundProfiles.filter(function(u) {
-      return u.email_verified && _isBaseProfile(u);
+    const validProfiles = foundProfiles.filter(function(u) {
+      return u.email_verified && (u.user_id !== user.user_id);
+    });
+
+    // in case an user has several accounts created in auth0
+    if (validProfiles.length > 1) {
+      return callback(new Error('Multiple user profiles already exist - cannot select base profile to link with'));
+    }
+
+    const baseProfile = validProfiles[0];
+    if (!baseProfile){
+      return callback(null, user, context);
+    }
+
+    const alreadyLinked = !!baseProfile.identities.filter(function(i) {
+      const userId = i.provider + '|' + i.user_id;
+      return userId === user.user_id;
     })[0];
 
-    if (baseProfile) {
-      const alreadyLinked = !!baseProfile.identities.filter(function(i) {
-        const userId = i.provider + '|' + i.user_id;
-        return userId === user.user_id;
-      })[0];
+    if (alreadyLinked) {
+      return callback(null, user, context);
+    }
 
-      if (alreadyLinked) {
-        return callback(null, user, context);
+    const userApiUrl = auth0.baseUrl + '/users';
+    const provider = user.identities[0].provider;
+    const providerUserId = user.identities[0].user_id;
+
+    request.post({
+      url: userApiUrl + '/' + baseProfile.user_id + '/identities',
+      headers: { Authorization: 'Bearer ' + auth0.accessToken },
+      json: {
+        provider: provider,
+        user_id: providerUserId
+      }
+    }, function(err, response, body) {
+      if (response.statusCode >= 400) {
+        return callback(new Error('Error linking account: ' + response.statusMessage));
       }
 
-      const userApiUrl = auth0.baseUrl + '/users';
-      const provider = user.identities[0].provider;
-      const providerUserId = user.identities[0].user_id;
-
-      request.post({
-        url: userApiUrl + '/' + baseProfile.user_id + '/identities',
-        headers: { Authorization: 'Bearer ' + auth0.accessToken },
-        json: {
-          provider: provider,
-          user_id: providerUserId
-        }
-      }, function(err, response, body) {
-        if (response.statusCode >= 400) {
-          return callback(new Error('Error linking account: ' + response.statusMessage));
-        }
-
-        context.primaryUser = baseProfile.user_id;
-        callback(null, user, context);
-      });
-    } else {
-      callback(null, user, context);
-    }
+      context.primaryUser = baseProfile.user_id;
+      return callback(null, user, context);
+    });
   });
 }
