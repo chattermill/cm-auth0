@@ -17,7 +17,13 @@ function(user, context, callback) {
     return callback(null, user, context);
   }
 
-  if (!user.email_verified) {
+  function _isSamplProfile(profile){
+    return !!profile.identities.filter(function(i) {
+      return i.provider === 'samlp';
+    })[0];
+  }
+
+  if (!user.email_verified && !_isSamplProfile(user)) {
     return callback(null, user, context);
   }
 
@@ -37,7 +43,7 @@ function(user, context, callback) {
     }
 
     const validProfiles = foundProfiles.filter(function(u) {
-      return u.email_verified && (u.user_id !== user.user_id);
+      return (u.email_verified || _isSamplProfile(u)) && (u.user_id !== user.user_id);
     });
 
     // in case an user has several accounts created in auth0
